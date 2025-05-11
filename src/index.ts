@@ -12,15 +12,41 @@
  */
 
 export default {
-	async fetch(request, env, ctx): Promise<Response> {
-		const url = new URL(request.url);
-		switch (url.pathname) {
-			case '/message':
-				return new Response('Hello, World!');
-			case '/random':
-				return new Response(crypto.randomUUID());
-			default:
-				return new Response('Not Found', { status: 404 });
+	async fetch(request: Request, env: Env): Promise<Response> {
+		const corsHeaders = {
+			'Access-Control-Allow-Origin': '*',
+			'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+			'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+		};
+
+		if (request.method === 'OPTIONS') {
+			return new Response(null, {
+				status: 204,
+				headers: corsHeaders,
+			});
 		}
-	},
+
+		const url = new URL(request.url);
+		const query = url.searchParams.get("query");
+		if (!query) {
+			return new Response("Missing `?query=` parameter", { 
+				status: 400,
+				headers: corsHeaders 
+			});
+		}
+
+		// Forward to USDA, using the secret stored in env.USDA_KEY
+		const usdaRes = await fetch(
+			`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&api_key=${env.USDA_KEY}`
+		);
+
+		// Return USDA's JSON back to the client
+		return new Response(usdaRes.body, {
+			status: usdaRes.status,
+			headers: {
+				...corsHeaders,
+				'Content-Type': 'application/json'
+			}
+		});
+	}
 } satisfies ExportedHandler<Env>;
