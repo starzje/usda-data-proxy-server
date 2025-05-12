@@ -37,8 +37,8 @@ export default {
 
 		// Forward to USDA, using the secret stored in env.USDA_KEY
 		const usdaRes = await fetch(
-			`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&api_key=${env.USDA_KEY}`
-		);
+			`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&dataType=Foundation&pageSize=20&api_key=${env.USDA_KEY}`
+		  );
 
 		// Return USDA's JSON back to the client
 		return new Response(usdaRes.body, {
