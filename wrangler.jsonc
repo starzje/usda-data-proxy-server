@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "usda-api-proxy-worker",
+	"name": "food-api-proxy-worker",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-05-10",
 	"compatibility_flags": [
@@ -16,7 +16,14 @@
 	// },
 	"observability": {
 		"enabled": true
-	}
+	},
+	"kv_namespaces": [
+		{
+			"binding": "RATE",
+			"id": "dc7560ba28bf481dae1833dc2ff69f18",
+			"preview_id": "ba4497c2a8c84c3a92addddbd5582755"
+		}
+	]
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

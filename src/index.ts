@@ -11,42 +11,39 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+import { handleUSDA } from "./usda";
+import { handleOFF } from "./off";
+import { cors } from "./utils";
+
 export default {
-	async fetch(request: Request, env: Env): Promise<Response> {
-		const corsHeaders = {
-			'Access-Control-Allow-Origin': '*',
-			'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
-			'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-		};
+	async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		const url = new URL(req.url);
+		const path = url.pathname;
 
-		if (request.method === 'OPTIONS') {
-			return new Response(null, {
-				status: 204,
-				headers: corsHeaders,
+		// Standardized endpoints
+		if (path.startsWith("/usda/")) {
+			return handleUSDA(req, env, ctx);
+		} else if (path.startsWith("/off/")) {
+			return handleOFF(req, env, ctx);
+		}
+		
+		// Backward compatibility: root path with query parameter goes to USDA
+		else if ((path === "/" || path.startsWith("/?")) && url.searchParams.get("query")) {
+			// Rewrite the URL to use the new standardized endpoint
+			const newUrl = new URL(req.url);
+			newUrl.pathname = "/usda/search";
+			const newRequest = new Request(newUrl.toString(), {
+				method: req.method,
+				headers: req.headers,
+				body: req.body
 			});
+			return handleUSDA(newRequest, env, ctx);
 		}
 
-		const url = new URL(request.url);
-		const query = url.searchParams.get("query");
-		if (!query) {
-			return new Response("Missing `?query=` parameter", { 
-				status: 400,
-				headers: corsHeaders 
-			});
-		}
-
-		// Forward to USDA, using the secret stored in env.USDA_KEY
-		const usdaRes = await fetch(
-			`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&dataType=Foundation&pageSize=20&api_key=${env.USDA_KEY}`
-		  );
-
-		// Return USDA's JSON back to the client
-		return new Response(usdaRes.body, {
-			status: usdaRes.status,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json'
-			}
+		// 404 for unknown paths
+		return new Response("Not found. Use /usda/search or /off/search endpoints.", { 
+			status: 404,
+			headers: cors().headers
 		});
 	}
 } satisfies ExportedHandler<Env>;

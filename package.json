@@ -1,5 +1,5 @@
 {
-	"name": "usda-api-proxy-worker",
+	"name": "food-api-proxy-worker",
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
